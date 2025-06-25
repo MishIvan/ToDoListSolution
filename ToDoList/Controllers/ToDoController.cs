@@ -19,7 +19,7 @@ namespace ToDoList.Controllers
         [HttpGet]
         public async Task<IActionResult> GetToDos()
         {
-            List<ToDoItem> list = await Task<List<ToDoItem>>.Run(() => { return m_dbHelper.GetItems(); });
+            List<ToDoItem> list = await m_dbHelper.GetItems();
             if (list == null)
             {
                 m_logger.LogError("Не удалось получить список TODO");
@@ -42,25 +42,25 @@ namespace ToDoList.Controllers
 
         }
         [HttpPost]
-        public async Task<IActionResult> CreateItem(ToDoForCreate message)
+        public async Task<IActionResult> CreateItem(ToDoItem message)
         {
-            ToDoItem item = new ToDoItem();
-            item.CreatedAt = DateTime.Now;
-            item.id = Guid.NewGuid().ToString();
-            item.Title = message.Title;
-            item.IsCompleted = false;
 
-            bool res = await Task<bool>.Run(() => { return m_dbHelper.CreateItem(item); });
+            bool res = await Task<bool>.Run(() => {
+                message.CreatedAt = DateTime.Now;
+                message.id = Guid.NewGuid().ToString();
+                message.IsCompleted = false;
+                return m_dbHelper.CreateItem(message); 
+            });
             if (res)
-                return Ok($"Добавлена запись с ИД = {item.id}");
+                return Ok($"Добавлена запись с ИД = {message.id}");
             else
             {
-                m_logger.LogError($"Не удалось добавить запись TODO с заголовком {item.Title} и ИД = {item.id}");
-                return NotFound($"Запись TODO с заголовком {item.Title} и ИД = {item.id} не добавлена");
+                m_logger.LogError($"Не удалось добавить запись TODO с заголовком {message.Title} и ИД = {message.id}: {m_dbHelper.errorMessage}");
+                return NotFound($"Запись TODO с заголовком {message.Title} и ИД = {message.id} не добавлена");
             }
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateItem(string id, ToDoForUpdate message)
+        public async Task<IActionResult> UpdateItem(string id, ToDoItem message)
         { 
 
             bool res = await Task<bool>.Run(() => { return m_dbHelper.UpdateItem(id, message.Title, message.IsCompleted); });
@@ -69,7 +69,7 @@ namespace ToDoList.Controllers
             else
             {
                 m_logger.LogError($"Не удалось изменить запись TODO с ИД = {id}");
-                return NotFound($"Запись TODO с ИД = {id} не изменена");
+                return NotFound($"Запись TODO с ИД = {id} не изменена: {m_dbHelper.errorMessage}");
             }
 
         }
@@ -83,7 +83,7 @@ namespace ToDoList.Controllers
             else
             {
                 m_logger.LogError($"Не удалось запись TODO с ИД = {id}");
-                return NotFound($"Запись TODO с ИД = {id} не удалена");
+                return NotFound($"Запись TODO с ИД = {id} не удалена: {m_dbHelper.errorMessage}");
             }
 
         }

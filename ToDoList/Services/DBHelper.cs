@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Collections.Generic;
 using ToDoList.Models;
 
@@ -6,12 +7,14 @@ namespace ToDoList.Services
 {
     public class DBHelper : IDBHelper
     {
-        public List<ToDoItem> GetItems()
+        private string m_errorMessage;
+        public string errorMessage {  get { return m_errorMessage; } }
+        public async Task<List<ToDoItem>> GetItems()
         {
             List<ToDoItem> lst = null;
             using (ApplicationContext db = new ApplicationContext())
             {
-                lst = db.ToDoItems.ToList();
+                lst = await db.ToDoItems.ToListAsync();
             }
             return lst; 
         }
@@ -27,47 +30,65 @@ namespace ToDoList.Services
         }
         public bool CreateItem(ToDoItem item)
         {
-            EntityEntry<ToDoItem> result = null;
-            using (ApplicationContext db = new ApplicationContext())
+            try
             {
-                result = db.ToDoItems.Add(item);
-                if(result != null) 
+                using (ApplicationContext db = new ApplicationContext())
+                {
+                    db.ToDoItems.Add(item);
                     db.SaveChanges();
+                }
+                return true;
             }
-            return result != null;
+            catch (Exception ex) 
+            {
+                m_errorMessage = ex.Message;
+                return false;
+            }
 
         }
         public bool DeleteItem(string id)
         {
-            EntityEntry<ToDoItem> result = null;
-            using (ApplicationContext db = new ApplicationContext())
+            try
             {
-                ToDoItem item = db.ToDoItems.Where(el => id == el.id).FirstOrDefault();
-                if (item != null)
+                using (ApplicationContext db = new ApplicationContext())
                 {
-                    result = db.ToDoItems.Remove(item);
-                    if (result != null)
+                    ToDoItem item = db.ToDoItems.Where(el => id == el.id).FirstOrDefault();
+                    if (item != null)
+                    {
+                        db.ToDoItems.Remove(item);
                         db.SaveChanges();
+                    }
                 }
+                return true;
             }
-            return result != null;
+            catch (Exception ex)
+            {
+                m_errorMessage = ex.Message;
+                return false;
+            }
         }
         public bool UpdateItem(string id, string title, bool completed)
         {
-            EntityEntry<ToDoItem> result = null;
-            using (ApplicationContext db = new ApplicationContext())
+            try
             {
-                ToDoItem _item = db.ToDoItems.Where(el => id == el.id).FirstOrDefault();
-                if (_item != null)
+                using (ApplicationContext db = new ApplicationContext())
                 {
-                    _item.IsCompleted = completed;
-                    _item.Title = title;
-                    result = db.ToDoItems.Update(_item);
-                    if (result != null)
+                    ToDoItem _item = db.ToDoItems.Where(el => id == el.id).FirstOrDefault();
+                    if (_item != null)
+                    {
+                        _item.IsCompleted = completed;
+                        _item.Title = title;
+                        db.ToDoItems.Update(_item);
                         db.SaveChanges();
+                    }
                 }
+                return true;
             }
-            return result != null;
+            catch (Exception ex)
+            {
+                m_errorMessage = ex.Message;
+                return false;
+            }
 
         }
 

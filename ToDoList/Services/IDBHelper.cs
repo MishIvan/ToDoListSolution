@@ -4,7 +4,8 @@ namespace ToDoList.Services
 {
     public interface IDBHelper
     {
-        List<ToDoItem> GetItems();
+        string errorMessage { get; }
+        Task<List<ToDoItem>> GetItems();
         ToDoItem GetItem(string id);
         bool CreateItem(ToDoItem item);
         bool DeleteItem(string id);
